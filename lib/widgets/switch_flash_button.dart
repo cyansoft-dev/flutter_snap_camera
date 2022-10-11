@@ -2,6 +2,8 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_snap_camera/widgets/rotation_icon_widget.dart';
 
+import 'glass_container.dart';
+
 class SwitchFlashButton extends StatelessWidget {
   const SwitchFlashButton({
     Key? key,
@@ -18,16 +20,8 @@ class SwitchFlashButton extends StatelessWidget {
         onTap: onPressed,
         child: SizedBox.square(
           dimension: 50,
-          child: Container(
+          child: GlassContainer(
             padding: const EdgeInsets.all(5),
-            decoration: BoxDecoration(
-              color: Colors.white12,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white,
-                width: 1,
-              ),
-            ),
             child: ValueListenableBuilder<FlashMode>(
               valueListenable: flashMode,
               builder: (context, value, child) {

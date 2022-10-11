@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'glass_container.dart';
 import 'rotation_icon_widget.dart';
 
 class CloseAppButton extends StatelessWidget {
@@ -7,21 +8,12 @@ class CloseAppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      child: SizedBox.square(
+    return GestureDetector(
+      onTap: () => Navigator.pop(context),
+      child: const SizedBox.square(
         dimension: 36,
-        child: ElevatedButton(
-          onPressed: () => Navigator.pop(context),
-          style: ElevatedButton.styleFrom(
-            elevation: 0,
-            backgroundColor: Colors.black54,
-            padding: const EdgeInsets.all(5),
-            shape: RoundedRectangleBorder(
-              side: const BorderSide(color: Colors.white, width: 1),
-              borderRadius: BorderRadius.circular(50),
-            ),
-          ),
-          child: const RotationIcon(
+        child: GlassContainer(
+          child: RotationIcon(
             Icons.close_rounded,
             size: 26,
             color: Colors.white,

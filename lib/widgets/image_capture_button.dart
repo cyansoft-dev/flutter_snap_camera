@@ -1,42 +1,27 @@
-import 'dart:io';
-
-import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
-import '../constants/type_def.dart';
+import 'glass_container.dart';
 
-class ImageCaptureButton extends StatefulWidget {
+class ImageCaptureButton extends StatelessWidget {
   const ImageCaptureButton({
     super.key,
-    this.controller,
     this.width = 65,
-    this.onCapture,
+    this.onPressed,
   });
   final double? width;
-  final CameraController? controller;
-  final OnCapture? onCapture;
+  final VoidCallback? onPressed;
 
-  @override
-  State<ImageCaptureButton> createState() => _ImageCaptureButtonState();
-}
-
-class _ImageCaptureButtonState extends State<ImageCaptureButton> {
   @override
   Widget build(BuildContext context) {
     return MergeSemantics(
       child: Semantics(
-        hidden: widget.controller == null,
         child: GestureDetector(
-          onTap: onTap,
+          onTap: onPressed,
           child: SizedBox.square(
-            dimension: widget.width,
-            child: Container(
+            dimension: width,
+            child: GlassContainer(
               padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white30,
-                border: Border.all(width: 3, color: Colors.white),
-              ),
+              border: Border.all(width: 3, color: Colors.white),
               child: const DecoratedBox(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
@@ -48,16 +33,5 @@ class _ImageCaptureButtonState extends State<ImageCaptureButton> {
         ),
       ),
     );
-  }
-
-  Future<void> onTap() async {
-    if (widget.controller!.value.isTakingPicture) {
-      return;
-    }
-
-    widget.controller!.takePicture().then((value) {
-      File? image = File(value.path);
-      widget.onCapture?.call(image);
-    });
   }
 }

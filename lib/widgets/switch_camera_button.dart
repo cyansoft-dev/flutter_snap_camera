@@ -1,34 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_snap_camera/constants/enum.dart';
+import 'package:flutter_snap_camera/widgets/glass_container.dart';
 
 import 'rotation_icon_widget.dart';
 
-class SwitchCameraButton extends StatelessWidget {
-  const SwitchCameraButton({Key? key, this.onPressed}) : super(key: key);
-
+class SwitchCameraButton extends StatefulWidget {
+  const SwitchCameraButton({
+    Key? key,
+    this.onPressed,
+    required this.sensor,
+  }) : super(key: key);
+  final ValueNotifier<CameraSensor> sensor;
   final VoidCallback? onPressed;
 
   @override
-  Widget build(BuildContext context) {
-    double turns = 0.0;
+  State<SwitchCameraButton> createState() => _SwitchCameraButtonState();
+}
 
-    return StatefulBuilder(
-      builder: (context, setState) => GestureDetector(
-        onTap: onPressed,
-        child: SizedBox.square(
-          dimension: 50,
-          child: Container(
-            padding: const EdgeInsets.all(5),
-            decoration: BoxDecoration(
-              color: Colors.white12,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white,
-                width: 1,
-              ),
-            ),
-            child: AnimatedRotation(
-              turns: turns,
-              duration: const Duration(milliseconds: 200),
+class _SwitchCameraButtonState extends State<SwitchCameraButton> {
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onPressed,
+      child: SizedBox.square(
+        dimension: 50,
+        child: GlassContainer(
+          padding: const EdgeInsets.all(5),
+          child: ValueListenableBuilder<CameraSensor>(
+            valueListenable: widget.sensor,
+            builder: (context, value, child) => AnimatedRotation(
+              turns: value == CameraSensor.back ? 0.0 : 0.5,
+              duration: const Duration(milliseconds: 300),
               child: const RotationIcon(
                 Icons.cached_outlined,
                 size: 32,

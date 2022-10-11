@@ -9,3 +9,8 @@ enum Ratio {
   portrait,
   medium,
 }
+
+enum CameraSensor {
+  back,
+  front,
+}

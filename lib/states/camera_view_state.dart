@@ -6,20 +6,24 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_snap_camera/constants/config.dart';
 import 'package:flutter_snap_camera/constants/enum.dart';
-import 'package:flutter_snap_camera/internal/file_processing.dart';
+import 'package:flutter_snap_camera/flutter_snap_camera.dart';
 import 'package:flutter_snap_camera/widgets/close_app_button.dart';
+import 'package:flutter_snap_camera/widgets/glass_container.dart';
 import 'package:flutter_snap_camera/widgets/pointer_viewfinder_widget.dart';
 import 'package:flutter_snap_camera/widgets/switch_camera_button.dart';
 import 'package:flutter_snap_camera/widgets/switch_flash_button.dart';
-import 'package:image/image.dart' as img;
+import 'package:image_editor/image_editor.dart';
+import '../internal/image_manipulating.dart';
 import '../internal/method.dart';
+import '../widgets/camera_preview_widget.dart';
 import '../widgets/image_capture_button.dart';
-import '../pages/camera_view.dart';
 import '../widgets/initialize_wrapper.dart';
 import '../widgets/rotation_icon_widget.dart';
 import '../widgets/zoom_level_widget.dart';
 
 class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
+  final GlobalKey key = GlobalKey();
+
   CameraController? initController;
 
   /// Available cameras
@@ -50,15 +54,17 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
 
   double y = 0.0;
 
+  int currentCameraIndex = 0;
+
   ValueNotifier<Ratio> ratio = ValueNotifier(Ratio.fullscreen);
 
   ValueNotifier<File?> imageCapture = ValueNotifier(null);
 
   ValueNotifier<FlashMode> flashMode = ValueNotifier(FlashMode.off);
 
-  SnapCameraConfig? get cameraConfig => widget.config;
+  ValueNotifier<CameraSensor> sensor = ValueNotifier(CameraSensor.back);
 
-  bool showFocus = false;
+  SnapCameraConfig? get cameraConfig => widget.config;
 
   bool get enableAudio => cameraConfig?.enableAudio ?? true;
 
@@ -66,7 +72,11 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
 
   int? get quality => cameraConfig?.quality;
 
-  int currentCameraIndex = 0;
+  Watermark? get watermark => cameraConfig?.watermark;
+
+  bool showFocus = false;
+
+  late ImageManipulating img;
 
   // CameraDescription get currentCamera => cameras.elementAt(currentCameraIndex);
 
@@ -79,6 +89,8 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
         overlays: <SystemUiOverlay>[]);
 
     ambiguate(WidgetsBinding.instance)?.addObserver(this);
+
+    img = ImageManipulating.init(quality: quality);
 
     /// Initialize camera.
     initializeCamera();
@@ -105,6 +117,7 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     ratio.dispose();
     flashMode.dispose();
     imageCapture.dispose();
+    sensor.dispose();
     initController?.dispose();
     // currentZoom.dispose();
     ambiguate(WidgetsBinding.instance)?.removeObserver(this);
@@ -162,8 +175,9 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
       onPointerUp: (_) => pointers--,
       child: InitializeWrapper(
         controller: initController,
-        builder: (value, child) => CameraPreview(
+        builder: (value, child) => CameraPreviewWidget(
           initController!,
+          constraints: constraints,
           child: GestureDetector(
             onScaleStart: handleScaleStart,
             onScaleUpdate: handleScaleUpdate,
@@ -250,24 +264,15 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
       child: ValueListenableBuilder<File?>(
         valueListenable: imageCapture,
         builder: (context, image, child) {
-          final double padding = image == null ? 50 : 75;
-          return Center(
-            child: AnimatedPadding(
-              padding: EdgeInsets.symmetric(
-                horizontal: padding,
-                vertical: 20,
-              ),
-              duration: const Duration(milliseconds: 300),
-              child: Container(
-                height: 100,
-                width: double.maxFinite,
-                decoration: BoxDecoration(
-                  color: Colors.black45,
-                  borderRadius: BorderRadius.circular(50),
-                ),
-                child: image == null ? listCaptureAction() : listImageAction(),
-              ),
+          final double padding = image == null ? 25 : 50;
+          return AnimatedPadding(
+            padding: EdgeInsets.symmetric(
+              horizontal: padding,
             ),
+            duration: const Duration(milliseconds: 300),
+            child: OverflowBox(
+                alignment: Alignment.center,
+                child: image == null ? listCaptureAction() : listImageAction()),
           );
         },
       ),
@@ -285,19 +290,11 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
               image?.deleteSync(recursive: true);
               imageCapture.value = null;
             },
-            child: SizedBox.square(
+            child: const SizedBox.square(
               dimension: 50,
-              child: Container(
-                padding: const EdgeInsets.all(5),
-                decoration: BoxDecoration(
-                  color: Colors.white12,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white,
-                    width: 1,
-                  ),
-                ),
-                child: const RotationIcon(
+              child: GlassContainer(
+                padding: EdgeInsets.all(5),
+                child: RotationIcon(
                   Icons.close_rounded,
                   size: 32,
                   color: Colors.white,
@@ -307,29 +304,16 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
           ),
           const SizedBox.square(dimension: 10),
           GestureDetector(
-            onTap: () async {
+            onTap: () {
               File? image = imageCapture.value;
-              if (quality != null) {
-                getCompressFile(image!, quality!)
-                    .then((value) => Navigator.pop(context, value));
-                return;
-              }
-
-              Navigator.pop(context, image);
+              processingImage(image)
+                  .then((value) => Navigator.pop(context, value));
             },
-            child: SizedBox.square(
+            child: const SizedBox.square(
               dimension: 50,
-              child: Container(
-                padding: const EdgeInsets.all(5),
-                decoration: BoxDecoration(
-                  color: Colors.white12,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white,
-                    width: 1,
-                  ),
-                ),
-                child: const RotationIcon(
+              child: GlassContainer(
+                padding: EdgeInsets.all(5),
+                child: RotationIcon(
                   Icons.check_rounded,
                   size: 32,
                   color: Colors.white,
@@ -350,17 +334,10 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
             onPressed: handleSwitchFlashMode,
           ),
           ImageCaptureButton(
-            controller: initController,
-            onCapture: (image) async {
-              if (currentCameraIndex == 1) {
-                if (image != null) {
-                  image = await getFlippedFile(image, img.Flip.horizontal);
-                }
-              }
-              imageCapture.value = image;
-            },
+            onPressed: handleCapture,
           ),
           SwitchCameraButton(
+            sensor: sensor,
             onPressed: () {
               createNewCamera(nextCamera);
             },
@@ -473,6 +450,21 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     handleFocus(cameraController, offset);
   }
 
+  /// handle when capture image
+  Future<void> handleCapture() async {
+    if (initController!.value.isTakingPicture) {
+      return;
+    }
+
+    final result = await initController!.takePicture();
+    File? image = File(result.path);
+    if (currentCameraIndex == 1) {
+      image = await img.flippedImage(image, const FlipOption(horizontal: true));
+    }
+
+    imageCapture.value = image;
+  }
+
   Future<void> handleFocus(CameraController controller, Offset offset) async {
     controller.setFocusPoint(offset);
     await controller.setFocusMode(FocusMode.locked);
@@ -508,6 +500,29 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     }
   }
 
+  Future<File?> processingImage(File? image) async {
+    if (image == null) {
+      return null;
+    }
+
+    File? imageResult;
+    if (quality != null) {
+      imageResult = await img.compressImage(image);
+    }
+
+    if (watermark != null) {
+      imageResult = await img.addWatermark(image, watermark!);
+    }
+    return imageResult;
+  }
+
+  // Get offset of picture
+  Offset? getOffset() {
+    RenderBox? box = key.currentContext?.findRenderObject() as RenderBox?;
+    Offset? position = box?.localToGlobal(Offset.zero);
+    return position;
+  }
+
   /// Handle when the scale gesture start.
   void handleScaleStart(ScaleStartDetails details) {
     baseScale = currentScale;
@@ -526,8 +541,10 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     currentCameraIndex++;
     if (currentCameraIndex == cameras!.length) {
       currentCameraIndex = 0;
+      sensor.value = CameraSensor.back;
       return cameras![0];
     } else {
+      sensor.value = CameraSensor.front;
       return cameras![currentCameraIndex];
     }
   }
