@@ -347,7 +347,12 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
 
   Future<void> initializeCamera() async {
     cameras = await availableCameras();
-    createNewCamera(cameras![0]);
+    if (cameras == null || cameras!.isEmpty) {
+      showInSnackBar("No camera found.");
+      return;
+    } else {
+      createNewCamera(cameras![0]);
+    }
   }
 
   Future<void> createNewCamera([CameraDescription? cameraDescription]) async {
@@ -547,5 +552,10 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
       sensor.value = CameraSensor.front;
       return cameras![currentCameraIndex];
     }
+  }
+
+  void showInSnackBar(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 }
