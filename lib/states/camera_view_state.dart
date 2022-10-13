@@ -349,7 +349,6 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     cameras = await availableCameras();
     if (cameras == null || cameras!.isEmpty) {
       showInSnackBar("No camera found.");
-      return;
     } else {
       createNewCamera(cameras![0]);
     }
@@ -555,7 +554,12 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
   }
 
   void showInSnackBar(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+        message,
+        style: const TextStyle(color: Colors.white),
+      ),
+      backgroundColor: Colors.red[400],
+    ));
   }
 }

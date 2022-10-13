@@ -21,6 +21,7 @@ class ImageCaptureButton extends StatelessWidget {
               padding: const EdgeInsets.all(5),
               decoration: BoxDecoration(
                 color: Colors.black45,
+                shape: BoxShape.circle,
                 border: Border.all(width: 3, color: Colors.white),
               ),
               child: const DecoratedBox(
