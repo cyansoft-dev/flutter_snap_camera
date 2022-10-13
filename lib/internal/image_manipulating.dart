@@ -51,11 +51,15 @@ class ImageManipulating {
   }
 
   Future<File?> _addText(File image, TextWatermark watermark) async {
+    // final alignment = watermark.alignment;
+    // final imageBytes = image.readAsBytesSync();
+
+    final offset = watermark.offset;
+    // final offset = await alignToOffset(imageBytes, alignment);
+
     final textOption = AddTextOption()
       ..addText(EditorText(
-          text: watermark.label,
-          offset: watermark.offset,
-          textColor: Colors.white));
+          text: watermark.label, offset: offset, textColor: Colors.white));
 
     final option = ImageEditorOption()
       ..addOption(textOption)
@@ -69,8 +73,12 @@ class ImageManipulating {
 
   Future<File?> _mergeImage(File image, ImageWatermark watermark) async {
     final dst = await watermark.imageFile.readAsBytes();
-    final dx = watermark.offset.dx.toInt();
-    final dy = watermark.offset.dy.toInt();
+
+    final offset = watermark.offset;
+    // final offset = await alignToOffset(dst, alignment) ?? Offset.zero;
+
+    final dx = offset.dx.toInt();
+    final dy = offset.dy.toInt();
 
     final width = watermark.size.width.toInt();
     final height = watermark.size.height.toInt();

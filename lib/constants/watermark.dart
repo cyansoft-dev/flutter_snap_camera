@@ -1,5 +1,6 @@
 import 'dart:io';
-import 'dart:ui';
+
+import 'package:flutter/painting.dart';
 
 abstract class Watermark {
   final Offset offset;

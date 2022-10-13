@@ -10,7 +10,7 @@ class PointerViewFinder extends StatelessWidget {
   final double maxExposureOffset;
   @override
   Widget build(BuildContext context) {
-    double value = 0;
+    // double value = 0;
     return StatefulBuilder(
       builder: (context, setState) => IgnorePointer(
         child: Column(

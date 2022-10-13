@@ -3,12 +3,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_snap_camera/constants/config.dart';
 import 'package:flutter_snap_camera/constants/enum.dart';
 import 'package:flutter_snap_camera/flutter_snap_camera.dart';
 import 'package:flutter_snap_camera/widgets/close_app_button.dart';
 import 'package:flutter_snap_camera/widgets/glass_container.dart';
+import 'package:flutter_snap_camera/widgets/message_widget.dart';
 import 'package:flutter_snap_camera/widgets/pointer_viewfinder_widget.dart';
 import 'package:flutter_snap_camera/widgets/switch_camera_button.dart';
 import 'package:flutter_snap_camera/widgets/switch_flash_button.dart';
@@ -21,7 +23,8 @@ import '../widgets/initialize_wrapper.dart';
 import '../widgets/rotation_icon_widget.dart';
 import '../widgets/zoom_level_widget.dart';
 
-class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
+class CameraViewState extends State<CameraView>
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   final GlobalKey key = GlobalKey();
 
   CameraController? initController;
@@ -78,6 +81,8 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
 
   late ImageManipulating img;
 
+  late AnimationController messageController;
+
   // CameraDescription get currentCamera => cameras.elementAt(currentCameraIndex);
 
   @override
@@ -91,6 +96,9 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     ambiguate(WidgetsBinding.instance)?.addObserver(this);
 
     img = ImageManipulating.init(quality: quality);
+
+    messageController = BottomSheet.createAnimationController(this)
+      ..duration = const Duration(milliseconds: 500);
 
     /// Initialize camera.
     initializeCamera();
@@ -119,6 +127,7 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     imageCapture.dispose();
     sensor.dispose();
     initController?.dispose();
+    messageController.dispose();
     // currentZoom.dispose();
     ambiguate(WidgetsBinding.instance)?.removeObserver(this);
     super.dispose();
@@ -348,7 +357,9 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
   Future<void> initializeCamera() async {
     cameras = await availableCameras();
     if (cameras == null || cameras!.isEmpty) {
-      showInSnackBar("No camera found.");
+      ambiguate(SchedulerBinding.instance)?.addPostFrameCallback((_) async {
+        showMessage(context, 'No camera found.', controller: messageController);
+      });
     } else {
       createNewCamera(cameras![0]);
     }
@@ -551,15 +562,5 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
       sensor.value = CameraSensor.front;
       return cameras![currentCameraIndex];
     }
-  }
-
-  void showInSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(
-        message,
-        style: const TextStyle(color: Colors.white),
-      ),
-      backgroundColor: Colors.red[400],
-    ));
   }
 }
