@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_snap_camera/constants/config.dart';
-
 import 'package:flutter_snap_camera/flutter_snap_camera.dart';
 
 void main() {

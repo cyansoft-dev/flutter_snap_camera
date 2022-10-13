@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'glass_container.dart';
-
 class ImageCaptureButton extends StatelessWidget {
   const ImageCaptureButton({
     super.key,
@@ -19,9 +17,12 @@ class ImageCaptureButton extends StatelessWidget {
           onTap: onPressed,
           child: SizedBox.square(
             dimension: width,
-            child: GlassContainer(
+            child: Container(
               padding: const EdgeInsets.all(5),
-              border: Border.all(width: 3, color: Colors.white),
+              decoration: BoxDecoration(
+                color: Colors.black45,
+                border: Border.all(width: 3, color: Colors.white),
+              ),
               child: const DecoratedBox(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
